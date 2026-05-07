@@ -48,7 +48,7 @@ k3d-malaa-cluster-551a3403-server-0                Ready    control-plane   13h 
 ##  Project Structure
 
 ```
-malaa-devops/
+EKS-Terraform-Localstack-project/
 ├── README.md                           
 ├── .gitignore                
 ├── main.tf                          
@@ -105,8 +105,8 @@ pip install terraform-local
 
 **2. Clone this repository**
 ```bash
-git clone https://github.com/your-username/malaa-devops.git
-cd malaa-devops
+git clone https://github.com/cybe44oot/EKS-Terraform-Localstack-project.git
+cd EKS-Terraform-Localstack-project
 ```
 
 **3. Configure AWS CLI for LocalStack**
