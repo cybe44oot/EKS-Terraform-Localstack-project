@@ -31,8 +31,8 @@ resource "aws_security_group" "public_lb" {
 #  SG: DMZ / Firewall 
 
 resource "aws_security_group" "dmz" {
-name = "dmz"
-vpc_id = aws_vpc.main.id
+  name   = "dmz"
+  vpc_id = aws_vpc.main.id
 
   ingress {
     from_port       = 80
@@ -55,14 +55,14 @@ vpc_id = aws_vpc.main.id
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-tags = { Name = "sg-dmz" }
+  tags = { Name = "sg-dmz" }
 }
 
 #  SG: Private Servers 
 
 resource "aws_security_group" "servers" {
-name = "servers"
-vpc_id = aws_vpc.main.id
+  name   = "servers"
+  vpc_id = aws_vpc.main.id
 
   ingress {
     from_port       = 80
@@ -92,14 +92,14 @@ vpc_id = aws_vpc.main.id
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-tags = { Name = "sg-servers" }
+  tags = { Name = "sg-servers" }
 }
 
 #  SG: Private Database 
 
 resource "aws_security_group" "database" {
-name = "database"
-vpc_id = aws_vpc.main.id
+  name   = "database"
+  vpc_id = aws_vpc.main.id
 
   ingress {
     from_port       = 8080

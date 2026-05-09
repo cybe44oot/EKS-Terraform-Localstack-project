@@ -2,18 +2,23 @@
 .terraform/
 *.tfstate
 *.tfstate.*
-crash.log
-
-# Terraform variables
 *.tfvars
-*.tfvars.json
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
 
-# Terraform lock file
-.terraform.lock.hcl
+# Kubernetes / secrets
+kubeconfig
+*.pem
+*.key
+.env
 
-# IDE
-.vscode/
-
-# OS
+# Windows / editor
 .DS_Store
 Thumbs.db
+.vscode/
