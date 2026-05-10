@@ -147,6 +147,22 @@ Output:
 This confirms that the Ingress is routing traffic correctly using the host:
 
 ```text
+test with Metal-LB :
+
+docker run --rm --network k3d-malaa-cluster-fefcc08e curlimages/curl:latest http://172.20.0.200 -H "Host: api.malaa.local"
+
+Unable to find image 'curlimages/curl:latest' locally
+latest: Pulling from curlimages/curl
+b6066d233986: Pull complete
+Digest: sha256:b3f1fb2a51d923260350d21b8654bbc607164a987e2f7c84a0ac199a67df812a
+Status: Downloaded newer image for curlimages/curl:latest
+  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+                                 Dload  Upload  Total   Spent   Left   Speed
+  0      0   0      0   0      0      0      0                              0/ - Hello World! Host:demo-api-68dcb9c946-s100     58 100     58   0      0     72      0                              0
+
+```
+
+```text
 api.malaa.local
 ```
 

@@ -1,0 +1,17 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: malaa-ip-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 172.20.0.200-172.20.0.250
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: malaa-l2-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - malaa-ip-pool
