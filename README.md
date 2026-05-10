@@ -11,39 +11,6 @@ This project implements a three-phase DevOps infrastructure exercise:
 
 **Status:** Phases 1 & 2 Complete ✅ | Phase 3 In Progress
 
-## Architecture
-
-### Network Architecture (Phase 1)
-
-```
-Internet User
-    ↓
-[Public Load Balancer - Port 80/443]  ← Public LB Subnet (10.0.1.0/24)
-    ↓
-[Firewall/IDS-IPS]  ← Private DMZ Subnet (10.0.2.0/24)
-    ↓
-[Application Servers] ← Private Servers Subnet (10.0.3.0/24)
-    ↓
-[Database Servers] ← Private Database Subnet (10.0.4.0/24)
-```
-
-**VPC CIDR:** 10.0.0.0/16  
-**Security Model:** Cascading access with least-privilege security groups
-
-### Kubernetes Cluster (Phase 2)
-
-```
-EKS Control Plane (AWS-managed)
-    ↓
-
-k3d-malaa-cluster-551a3403-agent-malaa-nodes-0-0   Ready    <none>          13h   v1.35.3+k3s1
-k3d-malaa-cluster-551a3403-agent-malaa-nodes-1-0   Ready    <none>          13h   v1.35.3+k3s1
-k3d-malaa-cluster-551a3403-agent-malaa-nodes-2-0   Ready    <none>          13h   v1.35.3+k3s1
-k3d-malaa-cluster-551a3403-server-0                Ready    control-plane   13h   v1.35.3+k3s1
-
-```
-
-**Cluster Name:** malaa-cluster  
 
 ##  Project Structure
 
@@ -75,6 +42,132 @@ EKS-Terraform-Localstack-project/
   
 
 ```
+
+## Architecture
+
+### Network Components
+
+```text
+VPC CIDR: 10.0.0.0/16
+
+Public LB Subnet:         10.0.1.0/24
+Private DMZ Subnet:       10.0.2.0/24
+Private Servers Subnet:   10.0.3.0/24
+Private Database Subnet:  10.0.4.0/24
+```
+
+### Network Architecture (Phase 1)
+
+```
+Internet User
+    ↓
+[Public Load Balancer - Port 80/443]  ← Public LB Subnet (10.0.1.0/24)
+    ↓
+[Firewall/IDS-IPS]  ← Private DMZ Subnet (10.0.2.0/24)
+    ↓
+[Application Servers] ← Private Servers Subnet (10.0.3.0/24)
+    ↓
+[Database Servers] ← Private Database Subnet (10.0.4.0/24)
+```
+
+**VPC CIDR:** 10.0.0.0/16  
+**Security Model:** Cascading access with least-privilege security groups
+
+### Kubernetes Cluster (Phase 2)The Kubernetes cluster is working successfully.
+
+Cluster verification command:
+
+```powershell
+k get nodes
+```
+
+Current output:
+
+```text
+NAME                                               STATUS   ROLES           AGE    VERSION
+k3d-malaa-cluster-fefcc08e-agent-malaa-nodes-0-0   Ready    <none>          155m   v1.35.3+k3s1
+k3d-malaa-cluster-fefcc08e-agent-malaa-nodes-1-0   Ready    <none>          155m   v1.35.3+k3s1
+k3d-malaa-cluster-fefcc08e-agent-malaa-nodes-2-0   Ready    <none>          155m   v1.35.3+k3s1
+k3d-malaa-cluster-fefcc08e-server-0                Ready    control-plane   156m   v1.35.3+k3s1
+```
+
+This confirms that the Kubernetes cluster is running with:
+
+```text
+1 control-plane node
+3 worker nodes
+All nodes are Ready
+```
+
+---
+## Application Deployment
+
+A demo API application has been deployed successfully inside the Kubernetes cluster.
+
+The application is running and responding correctly.
+
+### Test Application Directly
+
+Command:
+
+```powershell
+curl.exe http://localhost:5050
+```
+
+Output:
+
+```text
+/ - Hello World! Host:demo-api-68dcb9c946-bbzm8/10.42.1.23
+```
+
+This confirms that the application is reachable directly through local port forwarding.
+
+---
+
+## Ingress Routing
+
+Ingress has been created to route external HTTP traffic to the application inside the Kubernetes cluster.
+
+The application is also working through the Ingress route.
+
+### Test Application Through Ingress
+
+Command:
+
+```powershell
+curl.exe http://localhost:8080 -H "Host: api.malaa.local"
+```
+
+Output:
+
+```text
+/ - Hello World! Host:demo-api-68dcb9c946-bbzm8/10.42.1.23
+```
+
+This confirms that the Ingress is routing traffic correctly using the host:
+
+```text
+api.malaa.local
+```
+
+Traffic flow:
+
+```text
+User Request
+    ↓
+localhost:8080
+    ↓
+Ingress Controller
+    ↓
+Ingress Rule: api.malaa.local
+    ↓
+Kubernetes Service
+    ↓
+Demo API Pods
+```
+
+---
+
 
 ##  Quick Start
 
@@ -151,31 +244,116 @@ aws eks update-kubeconfig \
 kubectl get nodes
 # Expected: 4 nodes (3 workers + 1 control plane), all Ready
 
-k3d-malaa-cluster-551a3403-agent-malaa-nodes-0-0   Ready    <none>          13h   v1.35.3+k3s1
-k3d-malaa-cluster-551a3403-agent-malaa-nodes-1-0   Ready    <none>          13h   v1.35.3+k3s1
-k3d-malaa-cluster-551a3403-agent-malaa-nodes-2-0   Ready    <none>          13h   v1.35.3+k3s1
-k3d-malaa-cluster-551a3403-server-0                Ready    control-plane   13h   v1.35.3+k3s1
+NAME                                               STATUS   ROLES           AGE    VERSION
+k3d-malaa-cluster-fefcc08e-agent-malaa-nodes-0-0   Ready    <none>          155m   v1.35.3+k3s1
+k3d-malaa-cluster-fefcc08e-agent-malaa-nodes-1-0   Ready    <none>          155m   v1.35.3+k3s1
+k3d-malaa-cluster-fefcc08e-agent-malaa-nodes-2-0   Ready    <none>          155m   v1.35.3+k3s1
+k3d-malaa-cluster-fefcc08e-server-0                Ready    control-plane   156m   v1.35.3+k3s1
 
 ```
 
 
 
-### AWS CLI Commands (via LocalStack)
 
-```bash
-# List VPCs
-aws --endpoint-url=http://localhost:4566 ec2 describe-vpcs --profile localstack
+## Verify Phase 1: Network Infrastructure
 
-# List subnets
-aws --endpoint-url=http://localhost:4566 ec2 describe-subnets --profile localstack
+Use the following AWS CLI commands with LocalStack.
 
-# List security groups
-aws --endpoint-url=http://localhost:4566 ec2 describe-security-groups --profile localstack
+### Check VPCs
 
-# List EKS clusters
-aws --endpoint-url=http://localhost:4566 eks list-clusters --profile localstack
+```powershell
+aws ec2 describe-vpcs `
+  --region us-east-1 `
+  --endpoint-url http://localhost:4566 `
+  --profile localstack
+```
+
+### Check Subnets
+
+```powershell
+aws ec2 describe-subnets `
+  --region us-east-1 `
+  --endpoint-url http://localhost:4566 `
+  --profile localstack
+```
+
+### Check Internet Gateway
+
+```powershell
+aws ec2 describe-internet-gateways `
+  --region us-east-1 `
+  --endpoint-url http://localhost:4566 `
+  --profile localstack
+```
+
+### Check Route Tables
+
+```powershell
+aws ec2 describe-route-tables `
+  --region us-east-1 `
+  --endpoint-url http://localhost:4566 `
+  --profile localstack
+```
+
+### Check Security Groups
+
+```powershell
+aws ec2 describe-security-groups `
+  --region us-east-1 `
+  --endpoint-url http://localhost:4566 `
+  --profile localstack
+```
+
+### Check Load Balancers
+
+```powershell
+aws elbv2 describe-load-balancers `
+  --region us-east-1 `
+  --endpoint-url http://localhost:4566 `
+  --profile localstack
+```
+
+These commands verify that Phase 1 network resources were created successfully.
+
+---
+
+## Verify Phase 2: Kubernetes / EKS
+
+### List EKS Clusters
+
+```powershell
+aws eks list-clusters `
+  --region us-east-1 `
+  --endpoint-url http://localhost:4566 `
+  --profile localstack
+```
+
+### Describe EKS Cluster
+
+```powershell
+aws eks describe-cluster `
+  --region us-east-1 `
+  --name malaa-cluster `
+  --endpoint-url http://localhost:4566 `
+  --profile localstack
 ```
 
 
-**Last Updated:** May 2026  
-**Next Phase:** Phase 3 - Observability & Logging Stack
+## Next Phase
+
+Phase 3: Observability and Logging Stack
+
+Planned work:
+
+```text
+Deploy Grafana
+Deploy Loki
+Deploy Vector
+Collect Kubernetes logs
+Collect application logs
+Visualize logs in Grafana
+Test application logs from demo-api
+```
+
+
+If there is anything I did not fully understand, or if I have any doubts while continuing the implementation, I will come back and ask for guidance.
