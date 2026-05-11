@@ -1,36 +1,58 @@
 resource "helm_release" "loki" {
   name             = "loki"
   repository       = "https://grafana.github.io/helm-charts"
-  chart            = "loki"
-  namespace        = var.observability_namespace
-  create_namespace = false
-  version          = "5.41.4"
+  chart            = "loki-stack"
+  namespace        = "monitoring"
+  create_namespace = true
+  timeout          = 600
 
-  values = [
-    yamlencode({
-      loki = {
-        enabled      = true
-        auth_enabled = false
-        server = {
-          http_listen_port = 3100
-        }
-        commonConfig = {
-          replication_factor = 1
-        }
-        storage = {
-          type = "filesystem"
-        }
-      }
-      # Minimal config for localstack/testing
-      singleBinary = {
-        replicas = 1
-      }
-    })
-  ]
+  set {
+    name  = "loki.enabled"
+    value = "true"
+  }
 
-  depends_on = [kubernetes_namespace.observability]
-}
+  set {
+    name  = "promtail.enabled"
+    value = "false"
+  }
 
-output "loki_service_endpoint" {
-  value = "http://loki:3100"
+  set {
+    name  = "grafana.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "grafana.adminUser"
+    value = "admin"
+  }
+
+  set {
+    name  = "grafana.adminPassword"
+    value = "malaa-admin-2024"
+  }
+
+  set {
+    name  = "grafana.sidecar.datasources.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "grafana.sidecar.datasources.label"
+    value = "grafana_datasource"
+  }
+
+  set {
+    name  = "loki.auth_enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "loki.persistence.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "loki.persistence.size"
+    value = "5Gi"
+  }
 }

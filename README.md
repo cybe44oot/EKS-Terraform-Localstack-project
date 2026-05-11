@@ -357,19 +357,249 @@ aws eks describe-cluster `
 
 ## Next Phase
 
-Phase 3: Observability and Logging Stack
+Phase 3 has been implemented successfully using **Grafana, Loki, and Vector**.
 
-Planned work:
+The observability stack collects Kubernetes pod logs from the cluster and visualizes them in Grafana.
+
+### Components Deployed
 
 ```text
-Deploy Grafana
-Deploy Loki
-Deploy Vector
-Collect Kubernetes logs
-Collect application logs
-Visualize logs in Grafana
-Test application logs from demo-api
+Grafana  → Log visualization dashboard
+Loki     → Log storage backend
+Vector   → Log collector running as DaemonSet
+```
+
+### Observability Architecture
+
+
+Vector runs as a DaemonSet, meaning one Vector pod runs on each worker node and collects logs from pods running on that node.
+
+---
+
+## Phase 3 Deployment
+
+Apply only the observability module:
+
+```powershell
+terraform apply "-target=module.observability" --auto-approve
+```
+
+After applying, verify the monitoring resources:
+
+```powershell
+kubectl get pods -n monitoring
+```
+
+Expected output:
+
+```text
+NAME                            READY   STATUS    RESTARTS   AGE
+loki-0                          1/1     Running   0          ...
+loki-grafana-xxxxxxxxxx-xxxxx   2/2     Running   0          ...
+vector-xxxxx                    1/1     Running   0          ...
+vector-xxxxx                    1/1     Running   0          ...
+vector-xxxxx                    1/1     Running   0          ...
+```
+
+Check monitoring services:
+
+```powershell
+kubectl get svc -n monitoring
+```
+
+Expected services include:
+
+```text
+loki
+loki-grafana
+loki-headless
+loki-memberlist
+vector-headless
+```
+
+---
+---
+
+## Access Grafana
+
+Port-forward Grafana:
+
+```powershell
+kubectl port-forward -n monitoring svc/loki-grafana 3000:80
+```
+
+Open Grafana in the browser:
+
+```text
+http://localhost:3000
+```
+
+Login credentials:
+
+```text
+Username: admin
+Password: malaa-admin-2024
+```
+
+---
+
+## Access Application Through Ingress
+
+Port-forward the Ingress Controller:
+
+```powershell
+kubectl port-forward -n ingress-nginx svc/nginx-ingress-controller 8080:80
+```
+
+Test the application through Ingress:
+
+```powershell
+curl.exe http://localhost:8080 -H "Host: api.malaa.local"
+```
+
+Expected output:
+
+```text
+/ - Hello World! Host:demo-api-xxxxxxxxxx-xxxxx/10.x.x.x
+```
+
+Run the curl command multiple times to generate logs:
+
+```powershell
+curl.exe http://localhost:8080 -H "Host: api.malaa.local"
+curl.exe http://localhost:8080 -H "Host: api.malaa.local"
+curl.exe http://localhost:8080 -H "Host: api.malaa.local"
+```
+
+---
+
+## Test Loki Directly
+
+Port-forward Loki:
+
+```powershell
+kubectl port-forward -n monitoring svc/loki 3100:3100
+```
+
+Test Loki readiness:
+
+```powershell
+curl.exe http://localhost:3100/ready
+```
+
+Expected output:
+
+```text
+ready
+```
+
+Check available Loki labels:
+
+```powershell
+curl.exe http://localhost:3100/loki/api/v1/labels
+```
+
+Check namespaces discovered by Loki:
+
+```powershell
+curl.exe http://localhost:3100/loki/api/v1/label/namespace/values
+```
+
+Expected namespaces:
+
+```text
+default
+ingress-nginx
+kube-system
+monitoring
+```
+
+Check pod labels discovered by Loki:
+
+```powershell
+curl.exe http://localhost:3100/loki/api/v1/label/pod/values
+```
+
+---
+
+
+### View all logs from the default namespace
+
+you can view the logs through label browser 
+
+## Important Testing Note
+
+Loki only shows namespaces and pods after logs are collected from them.
+
+If a namespace or pod does not appear in Grafana, it usually means the pod has not produced new logs yet.
+
+For example, if the `demo-api` pods were created before Vector was installed, old startup logs may not appear in Loki. Restart the deployment to generate fresh logs:
+
+```powershell
+kubectl rollout restart deployment/demo-api -n default
+```
+
+Wait for the rollout:
+
+```powershell
+kubectl rollout status deployment/demo-api -n default
+```
+
+## Create Test Logging Pod
+
+To confirm that Loki, Vector, and Grafana can collect logs from the `default` namespace, create a test pod:
+
+```powershell
+kubectl run log-test -n default --image=busybox --restart=Never -- sh -c "i=0; while true; do echo default-test-log-$i; i=$((i+1)); sleep 2; done"
+```
+
+Wait a few seconds, then check logs:
+
+```powershell
+kubectl logs -n default log-test --tail=10
+```
+
+## Phase 3 Verification Summary
+
+Phase 3 is working successfully when:
+
+```text
+1. Loki pod is Running
+2. Grafana pod is Running
+3. Vector pods are Running on worker nodes
+4. Vector logs show Healthcheck passed
+5. Loki /ready endpoint returns ready
+6. Grafana Explore can query Loki
+```
+
+Final working flow:
+
+```text
+curl request
+    ↓
+localhost:8080
+    ↓
+Ingress Controller
+    ↓
+demo-api Service
+    ↓
+demo-api Pods
+    ↓
+Vector
+    ↓
+Loki
+    ↓
+Grafana Explore
+```
+
+---
+
+## Project Status
+
+```text
+Phase 1: Secure Network Infrastructure ✅ Complete
+Phase 2: Kubernetes / EKS Cluster ✅ Complete
+Phase 3: Observability and Logging Stack ✅ Complete
 ```
 
 
-If there is anything I did not fully understand, or if I have any doubts while continuing the implementation, I will come back and ask for guidance.

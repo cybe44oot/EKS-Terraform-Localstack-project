@@ -1,94 +1,53 @@
 resource "helm_release" "vector" {
-  name       = "vector"
-  repository = "https://helm.vector.dev"
-  chart      = "vector"
-  namespace  = var.observability_namespace
-  version    = "0.26.0"
+  name             = "vector"
+  repository       = "https://helm.vector.dev"
+  chart            = "vector"
+  namespace        = "monitoring"
+  create_namespace = true
+  timeout          = 600
 
   values = [
-    yamlencode({
-      role = "Agent"
-      kind = "DaemonSet"
+    <<-EOT
+role: "Agent"
 
-      vectorConfig = <<-EOT
-        sources:
-          kubernetes_logs:
-            type: kubernetes_logs
+service:
+  enabled: false
 
-        transforms:
-          add_metadata:
-            type: remap
-            inputs:
-              - kubernetes_logs
-            source: |
-              .cluster = "malaa-cluster"
-              .environment = "local"
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
 
-        sinks:
-          loki:
-            type: loki
-            inputs:
-              - add_metadata
-            endpoint: "http://loki.observability.svc.cluster.local:3100"
-            encoding:
-              codec: json
-            labels:
-              cluster: "malaa-cluster"
-              environment: "local"
-              namespace: "{{ kubernetes.pod_namespace }}"
-              pod: "{{ kubernetes.pod_name }}"
-              container: "{{ kubernetes.container_name }}"
-              stream: "{{ stream }}"
+customConfig:
+  data_dir: /vector-data-dir
 
-          stdout:
-            type: console
-            inputs:
-              - add_metadata
-            encoding:
-              codec: json
-      EOT
+  sources:
+    kubernetes_logs:
+      type: kubernetes_logs
 
-      serviceAccount = {
-        create = true
-      }
+  sinks:
+    loki:
+      type: loki
+      inputs:
+        - kubernetes_logs
+      endpoint: "http://loki.monitoring.svc.cluster.local:3100"
+      encoding:
+        codec: json
+      labels:
+        namespace: '{{ "{{ kubernetes.pod_namespace }}" }}'
+        pod: '{{ "{{ kubernetes.pod_name }}" }}'
+        container: '{{ "{{ kubernetes.container_name }}" }}'
 
-      rbac = {
-        enabled = true
-      }
-
-      securityContext = {
-        privileged = true
-        runAsUser  = 0
-      }
-
-      volumes = [
-        {
-          name = "var-log"
-          hostPath = {
-            path = "/var/log"
-          }
-        },
-        {
-          name = "var-lib-docker"
-          hostPath = {
-            path = "/var/lib/docker"
-          }
-        }
-      ]
-
-      volumeMounts = [
-        {
-          name      = "var-log"
-          mountPath = "/var/log"
-          readOnly  = true
-        },
-        {
-          name      = "var-lib-docker"
-          mountPath = "/var/lib/docker"
-          readOnly  = true
-        }
-      ]
-    })
+    stdout:
+      type: console
+      inputs:
+        - kubernetes_logs
+      encoding:
+        codec: json
+EOT
   ]
 
   depends_on = [helm_release.loki]
