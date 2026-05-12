@@ -5,7 +5,8 @@ resource "kubernetes_namespace" "ingress" {
   }
 }
 
-# Step 2: ServiceAccount (controller needs this to watch k8s resources)
+# Step 2: ServiceAccount 
+
 resource "kubernetes_service_account" "nginx_ingress" {
   metadata {
     name      = "nginx-ingress-serviceaccount"
@@ -13,7 +14,8 @@ resource "kubernetes_service_account" "nginx_ingress" {
   }
 }
 
-# Step 3: ClusterRole - permissions the controller needs
+# Step 3: ClusterRole 
+
 resource "kubernetes_cluster_role" "nginx_ingress" {
   metadata {
     name = "nginx-ingress-clusterrole"
@@ -63,6 +65,7 @@ resource "kubernetes_cluster_role" "nginx_ingress" {
 }
 
 # Step 4: Bind the ClusterRole to the ServiceAccount
+
 resource "kubernetes_cluster_role_binding" "nginx_ingress" {
   metadata {
     name = "nginx-ingress-clusterrole-binding"
@@ -81,7 +84,8 @@ resource "kubernetes_cluster_role_binding" "nginx_ingress" {
   }
 }
 
-# Step 5: IngressClass resource (required for ingressClassName: nginx to work)
+# Step 5: IngressClass resource 
+
 resource "kubernetes_ingress_class_v1" "nginx" {
   metadata {
     name = "nginx"
@@ -96,6 +100,7 @@ resource "kubernetes_ingress_class_v1" "nginx" {
 }
 
 # Step 6: ConfigMaps
+
 resource "kubernetes_config_map" "nginx_configuration" {
   metadata {
     name      = "nginx-configuration"
@@ -123,7 +128,8 @@ resource "kubernetes_config_map" "udp_services" {
   depends_on = [kubernetes_namespace.ingress]
 }
 
-# Step 7: The actual controller deployment — fixed ports + serviceAccount
+# Step 7: The actual controller deployment 
+
 resource "kubernetes_deployment" "nginx_ingress" {
   metadata {
     name      = "nginx-ingress-controller"
@@ -147,7 +153,6 @@ resource "kubernetes_deployment" "nginx_ingress" {
       }
 
       spec {
-        # Attach the service account so the controller can watch ingress resources
         service_account_name = kubernetes_service_account.nginx_ingress.metadata[0].name
 
         container {
@@ -179,7 +184,8 @@ resource "kubernetes_deployment" "nginx_ingress" {
             }
           }
 
-          # FIXED: controller listens on 80, not 5050
+          # controller listens on 80
+
           port {
             name           = "http"
             container_port = 80
@@ -192,7 +198,6 @@ resource "kubernetes_deployment" "nginx_ingress" {
             protocol       = "TCP"
           }
 
-          # Required: controller needs NET_BIND_SERVICE to bind port 80
           security_context {
             capabilities {
               add  = ["NET_BIND_SERVICE"]
@@ -225,7 +230,8 @@ resource "kubernetes_deployment" "nginx_ingress" {
   wait_for_rollout = false
 }
 
-# Step 8: LoadBalancer service — expose port 80 of the controller (internal AWS LB)
+# Step 8: LoadBalancer Service
+
 resource "kubernetes_service" "nginx_ingress" {
   metadata {
     name      = "nginx-ingress-controller"
@@ -254,7 +260,8 @@ resource "kubernetes_service" "nginx_ingress" {
 }
 
 
-# Step 9: Ingress routing rule — routes api.malaa.local → demo-api-svc:5050
+# Step 9: Ingress routing rule 
+
 resource "kubernetes_ingress_v1" "main" {
   metadata {
     name      = "malaa-ingress"
@@ -279,7 +286,7 @@ resource "kubernetes_ingress_v1" "main" {
             service {
               name = "demo-api-svc"
               port {
-                number = 5050  # your app's port, correct
+                number = 5050  
               }
             }
           }

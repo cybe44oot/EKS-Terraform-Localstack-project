@@ -1,4 +1,3 @@
-#  EKS IAM Role 
 resource "aws_iam_role" "eks_cluster" {
   name = "malaa-eks-role"
   assume_role_policy = jsonencode({
@@ -15,7 +14,6 @@ resource "aws_iam_role_policy_attachment" "eks_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-#  EKS Cluster 
 
 resource "aws_eks_cluster" "main" {
   name     = "malaa-cluster"
@@ -28,7 +26,6 @@ resource "aws_eks_cluster" "main" {
   tags       = { Name = "malaa-cluster" }
 }
 
-# Node IAM Role 
 
 resource "aws_iam_role" "eks_nodes" {
   name = "malaa-eks-nodes-role"
@@ -54,7 +51,6 @@ resource "aws_iam_role_policy_attachment" "nodes_ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-# Node Group
 
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
